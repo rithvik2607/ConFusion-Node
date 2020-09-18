@@ -5,6 +5,8 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var session = require('express-session');
 var FileStore = require('session-file-store')(session);
+var passport = require('passport');
+var authenticate = require('./authenticate');
 
 const mongoose = require('mongoose');
 
@@ -17,7 +19,7 @@ connect.then((db) => {
   console.log('Connected correctly to the server');
 }, (err) => { console.log(err); });
 
-var indexRouter = require('./routes/index');
+var index = require('./routes/index');
 var usersRouter = require('./routes/users');
 var dishRouter = require('./routes/dishRouter');
 var promotionsRouter = require('./routes/promoRouter');
@@ -43,42 +45,23 @@ app.use(session({
   store: new FileStore()
 }));
 
+//passport config
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.use('/', index)
+app.use('/users', usersRouter);
+
 function auth(req,res,next) {
-  console.log(req.session);
+  console.log(req.user);
 
-  if (!req.session.username) {
-    var authHeader = req.headers.authorization;
-
-    if (!authHeader) {
-      var err = new Error('You are not authenticated');
-      res.setHeader('WWW-Authenticate', 'Basic');
-      err.status = 401;
-      return next(err);
-    }
-  
-    var auth = new Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-    var username = auth[0];
-    var password = auth[1];
-    if (username === 'admin' && password === 'password') {
-      req.session.username = 'admin';
-      next(); //authorized
-    } else {
-      var err = new Error('You are not authenticated!');
-      res.setHeader('WWW-Authenticate', 'Basic');
-      err.status = 401;
-      next(err);
-    }
+  if(!req.user) {
+    var err = new Error('You are not authenticated!');
+    err.status = 403;
+    return next(err);
   }
   else {
-    if (req.session.username === 'admin') {
-      next();
-    }
-    else {
-      var err = new Error('You are not authenticated!');
-      
-      err.status = 401;
-      next(err);
-    }
+    next();
   }
 }
 
@@ -86,8 +69,6 @@ app.use(auth);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
 app.use('/dishes', dishRouter);
 app.use('/promotions', promotionsRouter);
 app.use('/leaders', leaderRouter);
