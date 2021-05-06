@@ -2,7 +2,7 @@
 
 This repo is the code for the backed of the ConFusion site.
 
-This site is developed as a part of the course, Server-side Development with NodeJS, Express and MongoDB.
+This site is developed as a part of the course, [Server-side Development with NodeJS, Express and MongoDB](https://www.coursera.org/learn/server-side-nodejs?).
 
 ## To run the server on your machine
 
